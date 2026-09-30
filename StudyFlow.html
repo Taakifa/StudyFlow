@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>StudyFlow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b1f2a;--mu:#6b7385;--pr:#4f46e5;--ok:#16a34a;--bd:#e5e8f0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1117;--card:#181b24;--tx:#e8eaf0;--mu:#8b93a7;--pr:#818cf8;--bd:#272b38}}
+:root[data-theme=dark]{--bg:#0f1117;--card:#181b24;--tx:#e8eaf0;--mu:#8b93a7;--pr:#818cf8;--bd:#272b38}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;padding-bottom:80px}
+main{max-width:860px;margin:0 auto;padding:16px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--bd)}
+nav button{white-space:nowrap;border:0;background:none;color:var(--mu);padding:8px 12px;border-radius:20px;font:inherit;cursor:pointer}
+nav button.on{background:var(--pr);color:#fff}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px;animation:in .25s}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}
+h2{margin:4px 0 12px;font-size:20px}h3{margin:0 0 8px;font-size:15px}.mu{color:var(--mu);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat b{display:block;font-size:24px}
+button.b,.b{background:var(--pr);color:#fff;border:0;border-radius:10px;padding:8px 14px;font:inherit;cursor:pointer;margin:2px}
+button.g{background:none;color:var(--pr);border:1px solid var(--bd);border-radius:10px;padding:7px 12px;font:inherit;cursor:pointer;margin:2px}
+input,select,textarea{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:9px;font:inherit;margin:3px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.row>.f0{flex:0}
+.task{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}.task:last-child{border:0}
+.task input{width:auto}.done span{text-decoration:line-through;color:var(--mu)}
+.pill{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bd)}.hi{background:#fecaca;color:#7f1d1d}
+.bar{height:8px;background:var(--bd);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pr);transition:width .5s}
+.ring{--p:0;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--pr) calc(var(--p)*1%),var(--bd) 0);display:grid;place-items:center}
+.ring span{background:var(--card);width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:700}
+#fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:50%;font-size:28px;box-shadow:0 6px 20px #0004;border:0;background:var(--pr);color:#fff;cursor:pointer;z-index:9}
+#menu{position:fixed;right:18px;bottom:calc(80px + env(safe-area-inset-bottom,0px));display:none;flex-direction:column;gap:6px;z-index:9}#menu.on{display:flex}
+.focus{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.focus .t{font-size:72px;font-weight:700;font-variant-numeric:tabular-nums}
+.chat{max-height:340px;overflow:auto}.m{padding:8px 12px;border-radius:12px;margin:6px 0;max-width:88%;white-space:pre-wrap}.m.u{background:var(--pr);color:#fff;margin-left:auto}.m.a{background:var(--bg)}
+.empty{text-align:center;color:var(--mu);padding:24px}
+.bars{display:flex;gap:8px;align-items:flex-end;height:110px}.bars div{flex:1;text-align:center;font-size:11px}.bars i{display:block;background:var(--pr);border-radius:6px 6px 0 0;min-height:2px}
+</style></head><body>
+<nav id="nav"></nav><main id="app"></main>
+<div id="menu"></div><button id="fab" aria-label="Quick capture">+</button>
+<script>
+const $=(s,e=document)=>e.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9);
+const todayS=()=>new Date().toISOString().slice(0,10),addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+const seed=()=>({theme:'auto',tasks:[
+["04:00","Wake up","Personal","low",15],["04:15","Workout","Health","med",30],["05:00","Deep study","Programming","high",60],["07:00","Revision / prep","Database","med",60],["09:00","College","College","high",360],["17:00","Assignments","College","high",90],["18:30","Skill learning","Web Development","med",60],["20:00","Projects / coding","Programming","high",90],["21:30","AI summarization + revision","AI","med",30],["22:00","Plan tomorrow","Personal","low",10]
+].map(([time,title,cat,pri,dur])=>({id:uid(),time,title,cat,pri,dur,done:{}})),
+subjects:['Programming','Database','Networking','Mathematics','Web Development','IoT','AI'].map(n=>({id:uid(),name:n})),
+notes:[{id:uid(),subject:'Database',topic:'Normalization',date:todayS(),diff:'med',text:'Normalization is the process of organizing data in a database to reduce redundancy. First normal form requires atomic values in each column. Second normal form removes partial dependencies on a composite key. Third normal form removes transitive dependencies between non-key attributes. Normalization improves consistency but may require more joins.',rev:[]}],
+log:[],quiz:[],streakDays:[]});
+let S;try{S=JSON.parse(localStorage.getItem('sf'))}catch(e){}if(!S)S=seed();
+const save=()=>{try{localStorage.setItem('sf',JSON.stringify(S))}catch(e){}};
+const dark=()=>document.documentElement.dataset.theme=S.theme=='auto'?'':S.theme;dark();
+const tabs=['Home','Schedule','Subjects','Notes','AI Tutor','Revision','Quiz','Analytics'];let tab='Home',sel=null,toast='';
+const nav=$('#nav');
+function drawNav(){nav.innerHTML=tabs.map(t=>`<button class="${t==tab?'on':''}" onclick="go('${t}')">${t}</button>`).join('')+`<button onclick="S.theme=(document.documentElement.dataset.theme=='dark'?'light':'dark');dark();save()">◐</button>`}
+function go(t){tab=t;render()}
+const hm=t=>{const[h,m]=t.split(':');return +h*60+ +m};
+const notesOf=s=>S.notes.filter(n=>!s||n.subject==s);
+const sentences=t=>(t.match(/[^.!?\n]+[.!?]?/g)||[]).map(s=>s.trim()).filter(s=>s.length>15);
+const STOP=new Set('the a an of to in and or is are for on with that this it as by be from at which can may more each'.split(' '));
+function keywords(t){const c={};t.toLowerCase().match(/[a-z]{4,}/g)?.forEach(w=>{if(!STOP.has(w))c[w]=(c[w]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(e=>e[0])}
+function summarize(text,mode){let ss=sentences(text),kw=keywords(text).slice(0,12);
+ const sc=ss.map((s,i)=>[s,kw.reduce((a,k)=>a+(s.toLowerCase().includes(k)?1:0),0)-i*.01]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+ let n=mode=='short'?3:mode=='simple'?5:8,pts=ss.filter(s=>sc.slice(0,n).includes(s));
+ const defs=ss.filter(s=>/ is | are | means | refers /i.test(s)).slice(0,3);
+ return {simple:ss[0]||text,pts,defs,quick:pts.slice(0,2).join(' '),exam:kw.slice(0,5).map(k=>`Be able to define and explain "${k}".`),
+ q2:kw.slice(0,2).map(k=>`Define ${k}.`),q5:kw.slice(2,4).map(k=>`Explain ${k} with an example.`),q10:kw.slice(4,5).map(k=>`Discuss ${k} in detail, with advantages and limitations.`)}}
+function renderSummary(r){const L=(t,a)=>a.length?`<h3>${t}</h3><ul>${a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+ return `<h3>Beginner explanation</h3><p>${esc(r.simple)}</p>${L('Key points',r.pts)}${L('Definitions',r.defs)}<h3>30-second revision</h3><p>${esc(r.quick)}</p>${L('Exam points',r.exam)}${L('2-mark',r.q2)}${L('5-mark',r.q5)}${L('10-mark',r.q10)}`}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function addNote(subject,topic,text,diff='med'){const n={id:uid(),subject,topic,date:todayS(),diff,text,rev:[]};S.notes.unshift(n);
+ [0,1,3,7,14].forEach(d=>n.rev.push({due:addD(todayS(),d),done:false}));S.log.push({d:todayS(),type:'concept',subject});save();return n}
+S.notes.forEach(n=>{if(!n.rev.length)[0,1,3,7,14].forEach(d=>n.rev.push({due:addD(n.date,d),done:false}))});
+function studyMin(d){return S.log.filter(l=>l.d==d&&l.type=='study').reduce((a,l)=>a+l.min,0)}
+function streak(){let c=0,d=todayS();while(studyMin(d)>0||S.log.some(l=>l.d==d&&l.type=='concept')){c++;d=addD(d,-1)}return c}
+function nextTask(){const now=new Date(),m=now.getHours()*60+now.getMinutes(),t=[...S.tasks].sort((a,b)=>hm(a.time)-hm(b.time));return t.find(x=>hm(x.time)>=m&&!x.done[todayS()])}
+function pct(){const a=S.tasks.length,d=S.tasks.filter(t=>t.done[todayS()]).length;return a?Math.round(d/a*100):0}
+function taskRow(t){const d=t.done[todayS()];return `<div class="task ${d?'done':''}"><input type="checkbox" ${d?'checked':''} onchange="tog('${t.id}')" aria-label="done"><span style="flex:1"><b>${t.time}</b> ${esc(t.title)}<br><small class="mu">${esc(t.cat)} · ${t.dur} min</small></span><span class="pill ${t.pri=='high'?'hi':''}">${t.pri}</span><button class="g" onclick="delT('${t.id}')" aria-label="delete">✕</button></div>`}
+function tog(id){const t=S.tasks.find(x=>x.id==id),k=todayS();t.done[k]=!t.done[k];if(t.done[k]&&/study|revision|coding|learning|assign|project/i.test(t.title+t.cat))S.log.push({d:k,type:'study',min:t.dur,subject:t.cat});save();render()}
+function delT(id){S.tasks=S.tasks.filter(t=>t.id!=id);save();render()}
+function addTask(f){S.tasks.push({id:uid(),time:f.time||'12:00',title:f.title,cat:f.cat||'General',pri:f.pri||'med',dur:+f.dur||30,done:{}});save()}
+function missed(){const m=new Date().getHours()*60+new Date().getMinutes();return S.tasks.filter(t=>!t.done[todayS()]&&hm(t.time)+t.dur<m)}
+const views={
+Home(){const n=nextTask(),ms=missed(),due=dueList();
+ return `<h2>${new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</h2>
+ <div class="card row"><div class="ring f0" style="--p:${pct()}"><span>${pct()}%</span></div><div><h3>Next up</h3>${n?`<b>${n.time} · ${esc(n.title)}</b><div class="mu">${n.dur} min · ${esc(n.cat)}</div>`:'<span class="mu">All done for today 🎉</span>'}</div></div>
+ <div class="grid"><div class="card stat"><span class="mu">Study today</span><b>${(studyMin(todayS())/60).toFixed(1)}h</b></div><div class="card stat"><span class="mu">Concepts today</span><b>${S.log.filter(l=>l.d==todayS()&&l.type=='concept').length}</b></div><div class="card stat"><span class="mu">Pending</span><b>${S.tasks.filter(t=>!t.done[todayS()]).length}</b></div><div class="card stat"><span class="mu">Streak</span><b>${streak()}🔥</b></div></div>
+ <div class="card"><button class="b" onclick="focusStart()">Study</button><button class="b" onclick="go('Notes')">Summarize</button><button class="b" onclick="go('AI Tutor')">Ask AI</button><button class="b" onclick="quick('task')">Add Task</button></div>
+ ${ms.length?`<div class="card"><h3>Missed tasks — suggested reschedule</h3>${ms.map(t=>`<div class="task"><span style="flex:1">${esc(t.title)}</span><button class="g" onclick="resched('${t.id}')">Move to ${slot(t)}</button></div>`).join('')}<div class="mu">No failures — just moved to the next free slot.</div></div>`:''}
+ ${due.length?`<div class="card"><h3>Revision due (${due.length})</h3><button class="b" onclick="go('Revision')">Start revising</button></div>`:''}
+ <div class="card"><h3>Today's schedule</h3>${[...S.tasks].sort((a,b)=>hm(a.time)-hm(b.time)).map(taskRow).join('')}</div>`},
+Schedule(){return `<h2>Schedule</h2><div class="card"><h3>Add activity</h3><form onsubmit="event.preventDefault();addTask(Object.fromEntries(new FormData(this)));render()"><div class="row"><input name="time" type="time" required><input name="title" placeholder="Title" required></div><div class="row"><input name="cat" placeholder="Subject / category"><select name="pri"><option>low</option><option selected>med</option><option>high</option></select><input name="dur" type="number" placeholder="Minutes" value="30"></div><button class="b">Add</button></form></div>
+ <div class="card">${[...S.tasks].sort((a,b)=>hm(a.time)-hm(b.time)).map(taskRow).join('')||'<div class="empty">No activities yet.</div>'}</div>
+ <div class="card"><h3>This week</h3><div class="bars">${[...Array(7)].map((_,i)=>{const d=addD(todayS(),i-6),m=studyMin(d);return `<div><i style="height:${Math.min(m,240)/2.4}px"></i>${d.slice(8)}</div>`}).join('')}</div><div class="mu">Study minutes, last 7 days</div></div>`},
+Subjects(){if(sel){const s=S.subjects.find(x=>x.id==sel),ns=notesOf(s.name),q=S.quiz.filter(x=>x.subject==s.name);
+ return `<button class="g" onclick="sel=null;render()">← Back</button><h2>${esc(s.name)}</h2><div class="card"><div class="mu">Progress</div><div class="bar"><i style="width:${prog(s.name)}%"></i></div><p class="mu">${ns.length} topics · avg quiz ${q.length?Math.round(q.reduce((a,x)=>a+x.pct,0)/q.length)+'%':'—'}</p></div>${ns.map(n=>`<div class="card"><b>${esc(n.topic)}</b> <span class="pill">${n.diff}</span><p class="mu">${esc(n.text.slice(0,140))}…</p></div>`).join('')||'<div class="empty">No notes yet. Add one from Notes.</div>'}`}
+ return `<h2>Subjects</h2><div class="card"><form class="row" onsubmit="event.preventDefault();const v=this.n.value.trim();if(v){S.subjects.push({id:uid(),name:v});save();render()}"><input name="n" placeholder="New subject"><button class="b f0">Add</button></form></div><div class="grid">${S.subjects.map(s=>`<div class="card" style="cursor:pointer" onclick="sel='${s.id}';render()"><b>${esc(s.name)}</b><div class="mu">${notesOf(s.name).length} topics</div><div class="bar"><i style="width:${prog(s.name)}%"></i></div></div>`).join('')}</div>`},
+Notes(){return `<h2>Concept Summarizer</h2><div class="card"><div class="row"><select id="ns">${S.subjects.map(s=>`<option>${esc(s.name)}</option>`).join('')}</select><input id="nt" placeholder="Topic"><select id="nd"><option>low</option><option selected>med</option><option>high</option></select></div><textarea id="nx" rows="6" placeholder="Paste notes or text to summarize…"></textarea><button class="b" onclick="doSum()">Summarize</button></div><div id="out"></div>
+ <h3>Saved notes</h3>${S.notes.map(n=>`<div class="card"><b>${esc(n.topic)}</b> <span class="pill">${esc(n.subject)}</span> <span class="mu">${n.date}</span><p class="mu">${esc(n.text.slice(0,160))}…</p><button class="g" onclick="delN('${n.id}')">Delete</button></div>`).join('')||'<div class="empty">No saved notes.</div>'}`},
+'AI Tutor'(){return `<h2>AI Study Coach</h2><div class="card"><div class="chat" id="chat">${chat.map(m=>`<div class="m ${m.r}">${esc(m.t)}</div>`).join('')||'<div class="empty">Ask about a topic from your notes.</div>'}</div><div>${['Explain this','Give an example','Create study questions','Teach me step-by-step','Test me'].map(c=>`<button class="g" onclick="ask('${c}')">${c}</button>`).join('')}</div><form class="row" onsubmit="event.preventDefault();ask(this.q.value);this.q.value=''"><input name="q" placeholder="Type a topic or question"><button class="b f0">Send</button></form></div><div class="mu">Runs offline using your saved notes.</div>`},
+Revision(){const d=dueList();return `<h2>Revision</h2>${d.map(([n,r,i])=>`<div class="card"><b>${esc(n.topic)}</b> <span class="pill">${esc(n.subject)}</span> <span class="mu">due ${r.due}</span><p>${esc(summarize(n.text).quick)}</p><button class="b" onclick="revDone('${n.id}',${i})">Revised ✓</button></div>`).join('')||'<div class="empty">Nothing due. Nice work! 🎉</div>'}<div class="card"><h3>Schedule</h3>${S.notes.map(n=>`<div class="mu">${esc(n.topic)}: ${n.rev.map(r=>`<span class="pill" style="${r.done?'opacity:.5':''}">${r.due.slice(5)}${r.done?' ✓':''}</span>`).join(' ')}</div>`).join('')}</div>`},
+Quiz(){if(qz&&qz.i<qz.qs.length){const q=qz.qs[qz.i];return `<h2>Quiz ${qz.i+1}/${qz.qs.length}</h2><div class="card"><p>${esc(q.q)}</p>${q.o.map(o=>`<button class="g" style="display:block;width:100%;text-align:left" onclick="pick(${JSON.stringify(o).replace(/"/g,'&quot;')})">${esc(o)}</button>`).join('')}</div>`}
+ if(qz){const p=Math.round(qz.score/qz.qs.length*100);return `<h2>Score ${qz.score}/${qz.qs.length} (${p}%)</h2><div class="card">${qz.wrong.map(w=>`<p>❌ ${esc(w.q)}<br><span class="mu">Answer: ${esc(w.a)} — ${esc(w.e)}</span></p>`).join('')||'Perfect!'}</div><div class="card"><h3>Recommendation</h3>${p<70?`Revise <b>${esc(qz.topic)}</b> again.`:'You’re solid on this topic.'}</div><button class="b" onclick="qz=null;render()">Done</button>`}
+ return `<h2>Quiz</h2>${S.notes.map(n=>`<div class="card row"><span><b>${esc(n.topic)}</b><br><small class="mu">${esc(n.subject)}</small></span><button class="b f0" onclick="mkQuiz('${n.id}')">Start</button></div>`).join('')||'<div class="empty">Save notes first.</div>'}`},
+Analytics(){const sub={};S.log.filter(l=>l.type=='study').forEach(l=>sub[l.subject]=(sub[l.subject]||0)+l.min);const mx=Math.max(1,...Object.values(sub)),wk=[...Array(7)].reduce((a,_,i)=>a+studyMin(addD(todayS(),-i)),0);
+ return `<h2>Analytics</h2><div class="grid"><div class="card stat"><span class="mu">Today</span><b>${(studyMin(todayS())/60).toFixed(1)}h</b></div><div class="card stat"><span class="mu">This week</span><b>${(wk/60).toFixed(1)}h</b></div><div class="card stat"><span class="mu">Concepts</span><b>${S.notes.length}</b></div><div class="card stat"><span class="mu">Streak</span><b>${streak()}🔥</b></div></div>
+ <div class="card"><h3>Study time by subject</h3>${Object.entries(sub).map(([k,v])=>`<div class="mu">${esc(k)} · ${v}m</div><div class="bar"><i style="width:${v/mx*100}%"></i></div>`).join('')||'<div class="empty">Complete study tasks or focus sessions to see data.</div>'}</div>
+ <div class="card"><h3>Quiz performance</h3>${S.quiz.slice(-8).map(q=>`<div class="mu">${esc(q.topic)} · ${q.pct}%</div><div class="bar"><i style="width:${q.pct}%"></i></div>`).join('')||'<div class="empty">No quizzes taken yet.</div>'}</div>`}};
+let chat=[],qz=null;
+function prog(name){const ns=notesOf(name);if(!ns.length)return 0;return Math.round(ns.reduce((a,n)=>a+n.rev.filter(r=>r.done).length/5,0)/ns.length*100)}
+function dueList(){const o=[];S.notes.forEach(n=>{const i=n.rev.findIndex(r=>!r.done&&r.due<=todayS());if(i>=0)o.push([n,n.rev[i],i])});return o}
+function revDone(id,i){S.notes.find(n=>n.id==id).rev[i].done=true;S.log.push({d:todayS(),type:'study',min:10,subject:S.notes.find(n=>n.id==id).subject});save();render()}
+function delN(id){S.notes=S.notes.filter(n=>n.id!=id);save();render()}
+function slot(t){const busy=S.tasks.filter(x=>!x.done[todayS()]).map(x=>[hm(x.time),hm(x.time)+x.dur]),now=new Date().getHours()*60+new Date().getMinutes()+10;let s=Math.ceil(now/15)*15;while(busy.some(([a,b])=>s<b&&s+t.dur>a)&&s<1400)s+=15;return String(Math.floor(s/60)%24).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function resched(id){const t=S.tasks.find(x=>x.id==id);t.time=slot(t);save();render()}
+function doSum(){const text=$('#nx').value.trim();if(text.length<30){$('#out').innerHTML='<div class="card" style="color:#dc2626">Please paste at least a couple of sentences.</div>';return}
+ $('#out').innerHTML='<div class="card">Analyzing…</div>';setTimeout(()=>{let mode='';const show=()=>{$('#out').innerHTML=`<div class="card">${renderSummary(summarize(text,mode))}<div><button class="g" onclick="navigator.clipboard?.writeText($('#out').innerText)">Copy</button><button class="b" onclick="saveSum()">Save</button><button class="g" onclick="M('')">Regenerate</button><button class="g" onclick="M('short')">Shorter</button><button class="g" onclick="M('simple')">Simpler</button><button class="g" onclick="tab='Quiz';saveSum(1)">Create quiz</button></div></div>`};window.M=m=>{mode=m;show()};window.saveSum=q=>{const n=addNote($('#ns').value,$('#nt').value||keywords(text)[0]||'Untitled',text,$('#nd').value);if(q)mkQuiz(n.id);else render()};show()},400)}
+function ask(c){if(!c.trim())return;chat.push({r:'u',t:c});const n=S.notes.find(n=>c.toLowerCase().includes(n.topic.toLowerCase()))||S.notes[0];let a;
+ if(!n)a='Save some notes first and I can answer from them.';else{const r=summarize(n.text),l=c.toLowerCase();
+ if(/example/.test(l))a=`Example for ${n.topic}: ${r.pts[1]||r.simple}`;
+ else if(/question|test/.test(l))a=[...r.q2,...r.q5,...r.q10].map((q,i)=>`${i+1}. ${q}`).join('\n');
+ else if(/step/.test(l))a=r.pts.map((p,i)=>`Step ${i+1}: ${p}`).join('\n');
+ else a=`${n.topic}: ${r.simple}\n\nKey idea: ${r.quick}`}
+ chat.push({r:'a',t:a});render();const c2=$('#chat');if(c2)c2.scrollTop=1e5}
+function mkQuiz(id){const n=S.notes.find(x=>x.id==id),ss=sentences(n.text),kw=keywords(n.text);const qs=[];
+ ss.forEach(s=>{const w=kw.find(k=>s.toLowerCase().includes(k));if(!w)return;const opts=[w,...kw.filter(k=>k!=w).slice(0,3)].sort(()=>Math.random()-.5);qs.push({q:'Fill in the blank: '+s.replace(new RegExp(w,'i'),'_____'),o:opts,a:w,e:`The sentence describes ${w}.`})});
+ ss.slice(0,3).forEach(s=>{const f=Math.random()<.5;qs.push({q:'True or false: '+(f?s.replace(/\b(reduce|requires|removes|improves)\b/i,'ignore'):s),o:['True','False'],a:f?'False':'True',e:'Compare with your note: '+s})});
+ qz={qs:qs.slice(0,6),i:0,score:0,wrong:[],topic:n.topic,subject:n.subject};tab='Quiz';render()}
+function pick(o){const q=qz.qs[qz.i];if(o==q.a)qz.score++;else qz.wrong.push(q);qz.i++;if(qz.i>=qz.qs.length)S.quiz.push({topic:qz.topic,subject:qz.subject,pct:Math.round(qz.score/qz.qs.length*100)}),save();render()}
+let ft=null;function focusStart(m=25,b=5){let sec=m*60,task=nextTask(),el=document.createElement('div');el.className='focus';el.innerHTML=`<div class="mu">Focus</div><h2>${esc(task?task.title:'Free study')}</h2><div class="t"></div><div class="bar" style="width:70%"><i></i></div><div><button class="g" data-m="25">25/5</button><button class="g" data-m="50">50/10</button><button class="g" data-m="custom">Custom</button></div><button class="b" id="x">End session</button>`;document.body.append(el);const tt=$('.t',el),bi=$('i',el);let tot=sec,ran=0;
+ const draw=()=>{tt.textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');bi.style.width=(1-sec/tot)*100+'%'};draw();
+ ft=setInterval(()=>{sec--;ran++;draw();if(sec<=0)end()},1000);
+ function end(){clearInterval(ft);const min=Math.round(ran/60);if(min>0){S.log.push({d:todayS(),type:'study',min,subject:task?task.cat:'General'});save()}el.remove();render()}
+ $('#x',el).onclick=end;el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{let v=b.dataset.m=='custom'?+prompt('Minutes?','30'):+b.dataset.m;if(v>0){sec=tot=v*60;ran=0;draw()}})}
+function quick(k){if(k=='task'){tab='Schedule';render();$('input[name=title]')?.focus()}else if(k=='note'||k=='concept')go('Notes');else if(k=='timer')focusStart();else go('AI Tutor');$('#menu').classList.remove('on')}
+$('#menu').innerHTML=[['task','Add task'],['note','Add note'],['concept','Add concept'],['timer','Start timer'],['ai','Ask AI']].map(([k,l])=>`<button class="b" onclick="quick('${k}')">${l}</button>`).join('');
+$('#fab').onclick=()=>$('#menu').classList.toggle('on');
+function render(){drawNav();try{$('#app').innerHTML=views[tab]()}catch(e){$('#app').innerHTML='<div class="card">Something went wrong. <button class="b" onclick="localStorage.removeItem(\'sf\');location.reload()">Reset data</button></div>'}}
+render();
+</script></body></html>
